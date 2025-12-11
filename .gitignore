@@ -31,4 +31,6 @@ Thumbs.db
 
 # Local data dumps
 data/
-
+models/
+catboost_info/
+advanced_tabular_classifier.py
