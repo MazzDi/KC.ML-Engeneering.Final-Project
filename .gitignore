@@ -30,7 +30,7 @@ dist/
 Thumbs.db
 
 # Local data dumps
-data/
-models/
+train_data/
+models_base/
 catboost_info/
 advanced_tabular_classifier.py
