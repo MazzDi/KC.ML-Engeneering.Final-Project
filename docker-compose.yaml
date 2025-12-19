@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  app:
+    build: ./app
+    container_name: recomender-app
+    env_file:
+      - ./.env
+    volumes:
+      - ./app:/app
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    command: sh -c "python main.py && uvicorn api:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      - database
+      - rabbitmq
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 30
+      start_period: 0s
+
+  ml_worker:
+    build: ./ml_worker/
+    image: recomender-ml-worker:latest
+    container_name: recomender-ml-worker
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    volumes:
+      - ./ml_worker:/app
+    depends_on:
+      - database
+      - rabbitmq
+    networks:
+      - app-network
+
+  web-proxy:
+    build: ./nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3.13.1-management-alpine
+    container_name: recomender-rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648
+    volumes:
+      - rabbitmq_volume:/var/lib/rabbitmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 30s
+      timeout: 5s
+      retries: 20
+      start_period: 0s
+    networks:
+      - app-network
+
+  database:
+    image: ankane/pgvector:v0.5.1
+    container_name: recomender-database
+    restart: unless-stopped
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      
+
+volumes:
+  postgres_volume:
+  rabbitmq_volume:
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
