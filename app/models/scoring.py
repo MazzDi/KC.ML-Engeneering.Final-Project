@@ -8,20 +8,13 @@ from sqlmodel import Field, Relationship
 from models.base_model import BaseModel
 
 if TYPE_CHECKING:
-    from models.user import User
+    from models.client import Client
 
 
 class Score(BaseModel, table=True):
     """
     Событие скоринга: фиксирует рассчитанный скор для пользователя в момент времени.
     """
-
-    user_id: Optional[int] = Field(default=None, index=True, foreign_key="user.id")
+    user_id: int = Field(index=True, foreign_key="user.id")
     score: float = Field(description="Скоринговый балл / вероятность дефолта")
-    scored_at: datetime = Field(default_factory=datetime.utcnow, description="Время расчёта скоринга")
-    user: Optional["User"] = Relationship(back_populates="scores")
-
-
-# Алиас для истории скоринга
-ScoringHistory = List[Score]
-
+    Optional["Client"] = Relationship(back_populates="scores")
