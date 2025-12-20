@@ -3,9 +3,9 @@ version: '3.8'
 services:
   app:
     build: ./app
-    container_name: recomender-app
+    container_name: credit-scoring-app
     env_file:
-      - ./.env
+      - ./app/.env
     volumes:
       - ./app:/app
     ports:
@@ -23,20 +23,20 @@ services:
       retries: 30
       start_period: 0s
 
-  ml_worker:
-    build: ./ml_worker/
-    image: recomender-ml-worker:latest
-    container_name: recomender-ml-worker
-    restart: unless-stopped
-    env_file:
-      - ./.env
-    volumes:
-      - ./ml_worker:/app
-    depends_on:
-      - database
-      - rabbitmq
-    networks:
-      - app-network
+  # ml_worker:
+  #   build: ./ml_worker/
+  #   image: credit-scoring-ml-worker:latest
+  #   container_name: credit-scoring-ml-worker
+  #   restart: unless-stopped
+  #   env_file:
+  #     - ./.env
+  #   volumes:
+  #     - ./ml_worker:/app
+  #   depends_on:
+  #     - database
+  #     - rabbitmq
+  #   networks:
+  #     - app-network
 
   web-proxy:
     build: ./nginx
@@ -51,11 +51,11 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.13.1-management-alpine
-    container_name: recomender-rabbitmq
+    container_name: credit-scoring-rabbitmq
     hostname: rabbitmq
     restart: unless-stopped
     env_file:
-      - ./.env
+      - ./app/.env
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
@@ -75,8 +75,8 @@ services:
       - app-network
 
   database:
-    image: ankane/pgvector:v0.5.1
-    container_name: recomender-database
+    image: postgres:16-alpine
+    container_name: credit-scoring-database
     restart: unless-stopped
     volumes:
       - postgres_volume:/var/lib/postgresql/data
@@ -84,7 +84,7 @@ services:
     networks:
       - app-network
     env_file:
-      - ./.env
+      - ./app/.env
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
