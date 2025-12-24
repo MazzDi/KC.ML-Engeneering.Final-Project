@@ -31,3 +31,5 @@ pytest==7.4.3
 pytest-asyncio==0.21.1
 httpx==0.25.2
 bcrypt==4.3.0
+russian-names==0.1.2
+transliterate==1.10.2

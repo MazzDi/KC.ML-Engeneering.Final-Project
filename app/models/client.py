@@ -1,20 +1,22 @@
-from __future__ import annotations
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 from typing import List, Optional
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from models.scoring import Score
     from models.credit import Credit
-    from models.employee import Employee
+    from models.manager import Manager
     from models.user import User
 
 
-class Client(table=True):
+class Client(SQLModel, table=True):
     """
     Клиент: содержит анкетные признаки, необходимые для скоринга.
     """
-    id: int = Field(foreign_key="user.id", index=True, unique=True)
+    # ID
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    manager_id: Optional[int] = Field(default=None, foreign_key="manager.user_id", index=True)
+    # Анкетные признаки
     code_gender: Optional[str] = Field(default=None, max_length=10)
     flag_own_car: Optional[str] = Field(default=None, max_length=5)
     flag_own_realty: Optional[str] = Field(default=None, max_length=5)
@@ -33,7 +35,7 @@ class Client(table=True):
     cnt_fam_members: Optional[int] = Field(default=None, ge=0)
     age_group: Optional[str] = Field(default=None, max_length=20)
     # Связи
-    user: Optional["User"] = Relationship(back_populates="user")
-    employee: Optional["Employee"] = Relationship(back_populates="employee")
-    scores: List["Score"] = Relationship(back_populates="score")
-    credits: List["Credit"] = Relationship(back_populates="credit")
+    user: Optional["User"] = Relationship(back_populates="client")
+    manager: Optional["Manager"] = Relationship(back_populates="clients")
+    credits: List["Credit"] = Relationship(back_populates="client")
+    scores: List["Score"] = Relationship(back_populates="client")

@@ -1,6 +1,6 @@
-from __future__ import annotations
 from datetime import datetime
 from sqlmodel import Field, SQLModel
+from typing import Optional
 
 class BaseModel(SQLModel):
     """
@@ -10,5 +10,5 @@ class BaseModel(SQLModel):
         id (int): Уникальный идентификатор сущности
         timestamp (datetime): Временная метка создания сущности
     """
-    id: int = Field(primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     timestamp: datetime = Field(default_factory=datetime.utcnow)
