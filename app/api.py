@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from database.database import get_session
 from services.crud.credit import get_credit_by_client_id
+from services.crud.scoring import score_client
 from models.user import User
 from models.client import Client  # noqa: F401
 from models.manager import Manager  # noqa: F401
@@ -12,6 +13,7 @@ from schemas.user import UserRead
 from schemas.client import ClientRead
 from schemas.manager import ManagerRead
 from schemas.credit import CreditRead
+from schemas.scoring import ScoreRead
 
 app = FastAPI(title="Credit Scoring API")
 
@@ -64,6 +66,15 @@ def get_manager_clients(user_id: int, session: Session = Depends(get_session)) -
 
     clients = session.exec(select(Client).where(Client.manager_id == user_id)).all()
     return [ClientRead.model_validate(c) for c in clients]
+
+
+@app.post("/clients/{user_id}/score", response_model=ScoreRead)
+def score_client_endpoint(user_id: int, session: Session = Depends(get_session)) -> ScoreRead:
+    client = session.get(Client, user_id)
+    if client is None:
+        raise HTTPException(status_code=404, detail="Client not found")
+    score_obj = score_client(client=client, session=session)
+    return ScoreRead.model_validate(score_obj)
 
 
 @app.get("/health")
