@@ -27,6 +27,7 @@ def create_client(
     occupation_type: Optional[str] = None,
     cnt_fam_members: Optional[int] = None,
     age_group: Optional[str] = None,
+    days_employed_bin: Optional[str] = None,
 ) -> Client:
     """
     Создание клиента.
@@ -52,6 +53,7 @@ def create_client(
             occupation_type=occupation_type,
             cnt_fam_members=cnt_fam_members,
             age_group=age_group,
+            days_employed_bin=days_employed_bin,
             user=user,
             manager=manager,
         )

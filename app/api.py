@@ -1,7 +1,4 @@
-from datetime import datetime
-
 from fastapi import Depends, FastAPI, HTTPException
-from pydantic import BaseModel, ConfigDict
 from sqlmodel import Session
 
 from database.database import get_session
@@ -11,62 +8,12 @@ from models.client import Client  # noqa: F401
 from models.manager import Manager  # noqa: F401
 from models.credit import Credit  # noqa: F401
 from models.scoring import Score  # noqa: F401
+from schemas.user import UserRead
+from schemas.client import ClientRead
+from schemas.manager import ManagerRead
+from schemas.credit import CreditRead
 
 app = FastAPI(title="Credit Scoring API")
-
-
-class UserRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    timestamp: datetime
-    login: str
-    first_name: str
-    last_name: str
-    role: str | None = None
-    is_admin: bool
-    is_test: bool
-
-
-class ClientRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    user_id: int
-    manager_id: int | None = None
-    code_gender: str | None = None
-    flag_own_car: str | None = None
-    flag_own_realty: str | None = None
-    cnt_children: int | None = None
-    amt_income_total: float | None = None
-    name_income_type: str | None = None
-    name_education_type: str | None = None
-    name_family_status: str | None = None
-    name_housing_type: str | None = None
-    days_birth: int | None = None
-    days_employed: int | None = None
-    flag_work_phone: int | None = None
-    flag_phone: int | None = None
-    flag_email: int | None = None
-    occupation_type: str | None = None
-    cnt_fam_members: int | None = None
-    age_group: str | None = None
-
-
-class ManagerRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    user_id: int
-
-
-class CreditRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    timestamp: datetime
-    client_id: int
-    amount_total: float
-    annual_rate: float
-    payment_history: list[dict]
 
 
 @app.get("/users/{user_id}", response_model=UserRead)

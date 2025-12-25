@@ -124,6 +124,7 @@ def _client_kwargs(row: pd.Series) -> dict:
         occupation_type=row.get("OCCUPATION_TYPE"),
         cnt_fam_members=int(row["CNT_FAM_MEMBERS"]),
         age_group=row.get("AGE_GROUP"),
+        days_employed_bin=row.get("DAYS_EMPLOYED_BIN"),
     )
 
 
