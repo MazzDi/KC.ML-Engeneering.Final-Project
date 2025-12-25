@@ -24,8 +24,8 @@ def get_database_engine():
     )
     return engine
 
-def get_session():
-    """Получает сессию базы данных"""
+async def get_session():
+    """Получает сессию базы данных (FastAPI dependency)."""
     with Session(get_database_engine()) as session:
         yield session
         

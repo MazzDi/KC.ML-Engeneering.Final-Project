@@ -13,7 +13,7 @@ router = APIRouter(prefix="/clients", tags=["clients"])
 
 
 @router.get("/{user_id}", response_model=ClientRead)
-def get_client(user_id: int, session: Session = Depends(get_session)) -> ClientRead:
+async def get_client(user_id: int, session: Session = Depends(get_session)) -> ClientRead:
     client = session.get(Client, user_id)
     if client is None:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -21,7 +21,7 @@ def get_client(user_id: int, session: Session = Depends(get_session)) -> ClientR
 
 
 @router.get("/{user_id}/credits", response_model=list[CreditRead])
-def get_client_credits(user_id: int, session: Session = Depends(get_session)) -> list[CreditRead]:
+async def get_client_credits(user_id: int, session: Session = Depends(get_session)) -> list[CreditRead]:
     # Ensure client exists
     client = session.get(Client, user_id)
     if client is None:
@@ -34,7 +34,7 @@ def get_client_credits(user_id: int, session: Session = Depends(get_session)) ->
 
 
 @router.post("/{user_id}/score", response_model=ScoreRead)
-def score_client_endpoint(user_id: int, session: Session = Depends(get_session)) -> ScoreRead:
+async def score_client_endpoint(user_id: int, session: Session = Depends(get_session)) -> ScoreRead:
     client = session.get(Client, user_id)
     if client is None:
         raise HTTPException(status_code=404, detail="Client not found")

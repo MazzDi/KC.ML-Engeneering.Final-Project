@@ -30,7 +30,7 @@ def session(engine):
 
 @pytest.fixture()
 def client(session):
-    def _override_get_session():
+    async def _override_get_session():
         yield session
 
     app.dependency_overrides[get_session] = _override_get_session
@@ -45,7 +45,7 @@ def client_no_raise(session):
     Same as client(), but returns HTTP 500 responses instead of raising server exceptions.
     Useful for testing error-handling paths.
     """
-    def _override_get_session():
+    async def _override_get_session():
         yield session
 
     app.dependency_overrides[get_session] = _override_get_session
