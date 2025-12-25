@@ -1,6 +1,6 @@
 from typing import Any, Optional, TYPE_CHECKING
 
-from sqlalchemy import Column
+from sqlalchemy import Column, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship
 from models.base_model import BaseModel
@@ -19,7 +19,7 @@ class Credit(BaseModel, table=True):
     # История выплат из credit_history.csv (по месяцам относительно текущего: 0 = текущий месяц)
     payment_history: list[dict[str, Any]] = Field(
         default_factory=list,
-        sa_column=Column(JSONB, nullable=False),
+        sa_column=Column(JSONB().with_variant(JSON, "sqlite"), nullable=False),
         description="Список объектов вида {months_ago: int, status: str}",
     )
     # Связи

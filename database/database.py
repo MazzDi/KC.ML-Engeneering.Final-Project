@@ -1,7 +1,10 @@
-from sqlmodel import SQLModel, Session, create_engine 
-from contextlib import contextmanager
+from functools import lru_cache
+
+from sqlmodel import SQLModel, Session, create_engine
+
 from .config import get_settings
 
+@lru_cache(maxsize=1)
 def get_database_engine():
     """
     Создает и настраивает SQLAlchemy engine.
@@ -21,11 +24,9 @@ def get_database_engine():
     )
     return engine
 
-engine = get_database_engine()
-
 def get_session():
     """Получает сессию базы данных"""
-    with Session(engine) as session:
+    with Session(get_database_engine()) as session:
         yield session
         
 def init_db(drop_all: bool = False) -> None:
