@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlmodel import Session
 
 from database.database import get_session
+from services.crud.credit import get_credit_by_client_id
 from models.user import User
 from models.client import Client  # noqa: F401
 from models.manager import Manager  # noqa: F401
@@ -57,6 +58,17 @@ class ManagerRead(BaseModel):
     user_id: int
 
 
+class CreditRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    timestamp: datetime
+    client_id: int
+    amount_total: float
+    annual_rate: float
+    payment_history: list[dict]
+
+
 @app.get("/users/{user_id}", response_model=UserRead)
 def get_user(user_id: int, session: Session = Depends(get_session)) -> UserRead:
     user = session.get(User, user_id)
@@ -71,6 +83,19 @@ def get_client(user_id: int, session: Session = Depends(get_session)) -> ClientR
     if client is None:
         raise HTTPException(status_code=404, detail="Client not found")
     return ClientRead.model_validate(client)
+
+
+@app.get("/clients/{user_id}/credits", response_model=list[CreditRead])
+def get_client_credits(user_id: int, session: Session = Depends(get_session)) -> list[CreditRead]:
+    # Ensure client exists
+    client = session.get(Client, user_id)
+    if client is None:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    credit = get_credit_by_client_id(client_id=user_id, session=session)
+    if credit is None:
+        return []
+    return [CreditRead.model_validate(credit)]
 
 
 @app.get("/managers/{user_id}", response_model=ManagerRead)

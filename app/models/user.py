@@ -1,9 +1,12 @@
+from sqlalchemy import Column
+from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, Relationship
 from typing import Optional
 import re
 from typing import TYPE_CHECKING
 from pydantic import field_validator
 from models.base_model import BaseModel
+from models.enum import UserRole
 
 if TYPE_CHECKING:
     from models.client import Client
@@ -18,7 +21,17 @@ class User(BaseModel, table=True):
     password_hash: str = Field(min_length=5, max_length=255)
     first_name: str = Field(max_length=255)
     last_name: str = Field(max_length=255)
-    role: Optional[str] = Field(default=None, max_length=20)
+    role: UserRole = Field(
+        default=UserRole.DEFAULT,
+        sa_column=Column(
+            SAEnum(
+                UserRole,
+                name="userrole",
+                values_callable=lambda enum: [e.value for e in enum],
+            ),
+            nullable=False,
+        ),
+    )
     is_admin: bool = Field(default=False)
     is_test: bool = Field(default=False)
     # Связи

@@ -17,8 +17,15 @@ from database.database import get_database_engine
 from models.user import User
 from models.client import Client
 from models.manager import Manager
-from models.credit import Credit  # noqa: F401 (import for SQLModel metadata)
-from models.scoring import Score  # noqa: F401 (import for SQLModel metadata)
+from models.credit import Credit
+from models.scoring import Score 
+from models.enum import UserRole
+from loguru import logger
+
+from services.crud.user import create_user
+from services.crud.client import create_client
+from services.crud.manager import create_manager
+from services.crud.credit import assign_credit
 
 
 def _wait_for_db(timeout_s: int = 60) -> None:
@@ -171,16 +178,17 @@ def seed() -> None:
             for client_id in client_ids:
                 if client_id in existing_credit_client_ids:
                     continue
-                session.add(
-                    Credit(
-                        client_id=client_id,
-                        amount_total=float(random.randint(1, 3_000_000)),
-                        annual_rate=0.16,
-                        payment_history=history_by_client_id.get(int(client_id), []),
-                    )
+                client = session.get(Client, client_id)
+                if client is None:
+                    continue
+                assign_credit(
+                    client=client,
+                    amount_total=float(random.randint(1, 3_000_000)),
+                    annual_rate=0.16,
+                    payment_history=history_by_client_id.get(int(client_id), []),
+                    session=session,
                 )
                 created += 1
-            session.commit()
 
             print(
                 f"Seed: backfilled manager assignment for clients={len(clients_without_manager)} "
@@ -221,43 +229,43 @@ def seed() -> None:
             password = _make_password(login)
 
             if i < n_clients:
-                role = "client"
+                role = UserRole.CLIENT
                 is_admin = False
             elif i < n_clients + n_managers:
-                role = "manager"
+                role = UserRole.MANAGER
                 is_admin = False
             else:
-                role = "admin"
+                role = UserRole.ADMIN
                 is_admin = True
             
-            # Создание пользователя
-            user = User(
+            # Создание пользователя через CRUD
+            user = create_user(
                 login=login,
-                password_hash=_hash_password(password),
+                password=password,
                 first_name=name,
                 last_name=surname,
                 role=role,
+                session=session,
                 is_admin=is_admin,
                 is_test=True,
             )
-            session.add(user)
-            session.commit()
-            session.refresh(user)
 
             # Создание клиента или менеджера из пользователя
-            if role == "client":
+            if role == UserRole.CLIENT:
                 row = df_clients.iloc[cli_created % len(df_clients)]
-                session.add(Client(user_id=user.id, **_client_kwargs(row)))
-                created_client_ids.append(user.id)
+                client = create_client(
+                    user=user,
+                    session=session,
+                    **_client_kwargs(row),
+                )
+                created_client_ids.append(client.user_id)
                 cli_created += 1
-            elif role == "manager":
-                session.add(Manager(user_id=user.id))
-                created_manager_ids.append(user.id)
+            elif role == UserRole.MANAGER:
+                manager = create_manager(user=user, session=session)
+                created_manager_ids.append(manager.user_id)
                 mgr_created += 1
             else:
                 adm_created += 1
-
-        session.commit()
 
         # Аллоцирование клиентов к менеджерам.
         if created_manager_ids:
@@ -269,15 +277,16 @@ def seed() -> None:
 
         # Создание 1 кредита на каждого клиента + история выплат из credit_history.csv
         for client_user_id in created_client_ids:
-            session.add(
-                Credit(
-                    client_id=client_user_id,
-                    amount_total=float(random.randint(1, 3_000_000)),
-                    annual_rate=0.16,
-                    payment_history=history_by_client_id.get(int(client_user_id), []),
-                )
+            client = session.get(Client, client_user_id)
+            if client is None:
+                continue
+            assign_credit(
+                client=client,
+                amount_total=float(random.randint(1, 3_000_000)),
+                annual_rate=0.16,
+                payment_history=history_by_client_id.get(int(client_user_id), []),
+                session=session,
             )
-        session.commit()
 
         print(
             f"Seed: created clients={cli_created}, managers={mgr_created}, admins={adm_created}."
