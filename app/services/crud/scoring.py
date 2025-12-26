@@ -10,6 +10,7 @@ from sqlmodel import Session
 
 from models.client import Client
 from models.scoring import Score
+from sqlmodel import select
 
 
 QUEUE_NAME = "ml_scoring_queue"
@@ -118,5 +119,11 @@ def score_client(client: Client, session: Session) -> Score:
     session.refresh(score_obj)
     logger.info(f"Scored client={client.user_id}: proba={proba}")
     return score_obj
+
+
+def get_latest_score(client_id: int, session: Session) -> Score | None:
+    return session.exec(
+        select(Score).where(Score.client_id == client_id).order_by(Score.timestamp.desc())
+    ).first()
 
 

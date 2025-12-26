@@ -51,3 +51,7 @@ def dismiss_manager(
         session.rollback()
         logger.error(f"Ошибка при увольнении менеджера {manager.user.login} id: {manager.user.id}: {e}")
         raise
+
+
+def get_manager_by_user_id(user_id: int, session: Session) -> Manager | None:
+    return session.get(Manager, user_id)

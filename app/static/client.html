@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Client — Credit Scoring</title>
+    <link rel="stylesheet" href="/static/css/main.css?v=3" />
+    <link rel="stylesheet" href="/static/css/ui.css?v=3" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="topbar">
+        <div>
+          <div class="title">Client dashboard</div>
+          <div class="muted" id="who">—</div>
+        </div>
+        <div class="row">
+          <a class="link" href="/ui">Home</a>
+          <button class="btn" id="btn_logout">Logout</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="title">Model score</div>
+          <div class="muted">Последний скор</div>
+          <div style="font-size:28px;margin:10px 0;" id="score_value">—</div>
+          <button class="btn success" id="btn_score">Получить скор</button>
+          <div id="score_msg" class="error"></div>
+        </div>
+
+        <div class="card">
+          <div class="title">Profile features</div>
+          <div id="features" class="kv"></div>
+        </div>
+
+        <div class="card">
+          <div class="title">Manager</div>
+          <div id="manager" class="muted">—</div>
+        </div>
+
+        <div class="card">
+          <div class="title">Credit</div>
+          <div id="credit" class="kv"></div>
+          <div style="margin-top:12px;">
+            <div class="muted">Payment history</div>
+            <div id="history"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/js/client_ui.js?v=3"></script>
+  </body>
+</html>
+
+
