@@ -167,3 +167,4 @@ docker compose --env-file ./app/.env up -d --scale ml-worker=3
 
 - RPC реализован через `reply_to` + `correlation_id` (см. `app/services/crud/scoring.py` и `app/ml_worker/main.py`).
 - В воркере стоит `basic_qos(prefetch_count=1)` — каждый worker берет по 1 задаче за раз (равномернее балансировка под нагрузкой).
+
