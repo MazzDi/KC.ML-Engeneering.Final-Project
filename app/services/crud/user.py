@@ -3,6 +3,7 @@ from models.enum import UserRole
 from sqlmodel import Session
 import bcrypt
 from loguru import logger
+from sqlmodel import select
 
 
 def create_user(
@@ -52,6 +53,13 @@ def get_user_by_id(id: int, session: Session) -> User:
     except Exception as e:
         logger.error(f"Ошибка при получении пользователя по ID {id}: {e}")
         raise
+
+
+def get_user_by_login(login: str, session: Session) -> User | None:
+    """
+    Получить пользователя по логину.
+    """
+    return session.exec(select(User).where(User.login == login)).first()
 
 def delete_user(id: int, session: Session) -> bool:
     """

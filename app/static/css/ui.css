@@ -1,0 +1,175 @@
+.kv {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.kv-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.kv-row:last-child {
+  border-bottom: 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.table th, .table td {
+  border-bottom: 1px dashed var(--border);
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,36,107,.20);
+  background: rgba(0,36,107,.06);
+  color: var(--brand-dark);
+  font-size: 12px;
+}
+
+/* Login page centering */
+body.login-body {
+  padding: 0;
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.login-wrap {
+  width: min(420px, calc(100vw - 48px));
+  padding: 0;
+}
+
+/* Manager layout */
+body.manager-body .container {
+  min-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Prevent whole-page scroll; list itself should scroll */
+body.manager-body {
+  overflow: hidden;
+}
+
+body.manager-body .container {
+  height: calc(100vh - 48px);
+}
+
+.manager-grid {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  min-height: 0;
+  height: 100%;
+}
+
+.manager-left {
+  width: 360px;
+  flex: 0 0 360px;
+}
+
+.manager-right {
+  flex: 1 1 auto;
+}
+
+@media (max-width: 900px) {
+  .manager-grid {
+    flex-direction: column;
+  }
+  .manager-left {
+    width: auto;
+    flex: 1 1 auto;
+  }
+}
+
+.fill-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fill-scroll {
+  flex: 1;
+  height: auto !important;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Compact form */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 900px) {
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .form-grid .section-title {
+    grid-column: 1 / -1;
+  }
+}
+
+.section-title {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-weight: 700;
+  color: var(--brand-dark);
+}
+
+.form-grid label.muted {
+  font-size: 12px;
+}
+
+.form-grid .input {
+  padding: 8px 10px;
+}
+
+/* Score in manager edit header */
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.score-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-text {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+

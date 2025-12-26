@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Client — Credit Scoring</title>
+    <link rel="stylesheet" href="/static/css/main.css?v=4" />
+    <link rel="stylesheet" href="/static/css/ui.css?v=4" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="topbar">
+        <div>
+          <div class="title">Client dashboard</div>
+          <div class="muted" id="who">—</div>
+        </div>
+        <div class="row">
+          <a class="link" href="/ui">Home</a>
+          <button class="btn" id="btn_logout">Logout</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="title">Кредитный рейтинг</div>
+          <div style="font-size:28px;margin:10px 0;font-weight:800;" id="score_value">—</div>
+          <button class="btn success" id="btn_score">Обновить скор</button>
+          <div class="muted" style="margin-top:10px;" id="manager_info">Manager: —</div>
+          <div class="muted" style="margin-top:8px;">Информация о кредите доступна на отдельной странице</div>
+          <div style="margin-top:10px;">
+            <a class="btn primary" href="/ui/client/credit" style="display:inline-block;">Открыть кредит</a>
+          </div>
+          <div id="score_msg" class="error"></div>
+        </div>
+
+        <div class="card">
+          <div class="title">Профиль:</div>
+          <div id="features" class="kv"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/js/client_ui.js?v=5"></script>
+  </body>
+</html>
+
+

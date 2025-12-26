@@ -6,7 +6,6 @@ from pathlib import Path
 import pandas as pd
 import pika
 from catboost import CatBoostClassifier
-from catboost import Pool
 from loguru import logger
 
 from ml_worker.config import get_settings
