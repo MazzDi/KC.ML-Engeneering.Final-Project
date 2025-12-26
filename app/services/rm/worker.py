@@ -1,13 +1,14 @@
 import json
 import sys
 import time
+from pathlib import Path
 
+import pandas as pd
 import pika
+from catboost import CatBoostClassifier
 from loguru import logger
 
-from ml_worker.constants import ModelTypes
 from ml_worker.config import get_settings
-from ml_worker.embedding import EmbeddingGenerator
 
 # Logging
 logger.remove()
@@ -15,8 +16,67 @@ logger.add(sys.stderr, level="INFO")
 
 QUEUE_NAME = "rm_task_queue"
 
-# Embedding model for RM service
-embedding_generator = EmbeddingGenerator(ModelTypes.MULTILINGUAL.value)
+MODEL_PATH = Path(__file__).resolve().parents[2] / "ml_worker" / "model.cbm"
+
+EXPECTED_FEATURES = [
+    "code_gender",
+    "flag_own_car",
+    "flag_own_realty",
+    "cnt_children",
+    "amt_income_total",
+    "name_income_type",
+    "name_education_type",
+    "name_family_status",
+    "name_housing_type",
+    "days_birth",
+    "days_employed",
+    "flag_work_phone",
+    "flag_phone",
+    "flag_email",
+    "occupation_type",
+    "cnt_fam_members",
+    "age_group",
+    "days_employed_bin",
+]
+
+
+def _load_model() -> CatBoostClassifier:
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(f"CatBoost model file not found at {MODEL_PATH}")
+    model = CatBoostClassifier()
+    model.load_model(str(MODEL_PATH))
+    return model
+
+
+model = _load_model()
+MODEL_FEATURES = list(getattr(model, "feature_names_", []) or [])
+if MODEL_FEATURES:
+    logger.info(f"rm-worker model expects {len(MODEL_FEATURES)} features: {MODEL_FEATURES}")
+else:
+    logger.warning("rm-worker model has no feature_names_; will use EXPECTED_FEATURES order.")
+
+
+def _predict(payload: dict) -> dict:
+    """
+    RPC payload:
+      {"client_id": 123, "features": {...}}
+    Response:
+      {"client_id": 123, "proba": 0.42, "pred": 0, "status": "success"}
+    """
+    features = payload.get("features") or {}
+    if not isinstance(features, dict):
+        raise TypeError("payload.features must be a dict")
+    columns = MODEL_FEATURES if MODEL_FEATURES else EXPECTED_FEATURES
+    row = {c: features.get(c) for c in columns}
+    df = pd.DataFrame([row], columns=columns)
+    proba = float(model.predict_proba(df)[0][1])
+    pred = int(proba >= 0.5)
+    return {
+        "client_id": payload.get("client_id"),
+        "proba": proba,
+        "pred": pred,
+        "status": "success",
+    }
 
 
 def main() -> None:
@@ -49,16 +109,8 @@ def main() -> None:
         started = time.time()
         try:
             payload = json.loads(body)
-            text = payload.get("text")
-            if not isinstance(text, str) or not text.strip():
-                raise ValueError("Request must contain non-empty 'text'")
-
-            emb = embedding_generator.get_embedding(text)
-            result = {
-                "embedding": emb,
-                "status": "success",
-                "processing_time": time.time() - started,
-            }
+            result = _predict(payload)
+            result["processing_time"] = time.time() - started
             send_result(result, properties)
             ch.basic_ack(delivery_tag=method.delivery_tag)
         except Exception as e:
