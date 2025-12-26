@@ -61,25 +61,7 @@ services:
     command: sh -c "python -m ml_worker.main"
     depends_on:
       rabbitmq:
-        condition: service_started
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  rm-worker:
-    build:
-      context: .
-      dockerfile: app/Dockerfile
-    container_name: credit-scoring-rm-worker
-    env_file:
-      - ./app/.env
-    volumes:
-      - ./app:/app
-      - ./database:/app/database
-    command: sh -c "python -m services.rm.worker"
-    depends_on:
-      rabbitmq:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
