@@ -60,4 +60,116 @@ body.login-body {
   padding: 0;
 }
 
+/* Manager layout */
+body.manager-body .container {
+  min-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Prevent whole-page scroll; list itself should scroll */
+body.manager-body {
+  overflow: hidden;
+}
+
+body.manager-body .container {
+  height: calc(100vh - 48px);
+}
+
+.manager-grid {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  min-height: 0;
+  height: 100%;
+}
+
+.manager-left {
+  width: 360px;
+  flex: 0 0 360px;
+}
+
+.manager-right {
+  flex: 1 1 auto;
+}
+
+@media (max-width: 900px) {
+  .manager-grid {
+    flex-direction: column;
+  }
+  .manager-left {
+    width: auto;
+    flex: 1 1 auto;
+  }
+}
+
+.fill-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fill-scroll {
+  flex: 1;
+  height: auto !important;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Compact form */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 900px) {
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .form-grid .section-title {
+    grid-column: 1 / -1;
+  }
+}
+
+.section-title {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-weight: 700;
+  color: var(--brand-dark);
+}
+
+.form-grid label.muted {
+  font-size: 12px;
+}
+
+.form-grid .input {
+  padding: 8px 10px;
+}
+
+/* Score in manager edit header */
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.score-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.score-text {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
 

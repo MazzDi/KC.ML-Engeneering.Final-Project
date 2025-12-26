@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Manager — Credit Scoring</title>
-    <link rel="stylesheet" href="/static/css/main.css?v=3" />
-    <link rel="stylesheet" href="/static/css/ui.css?v=3" />
+    <link rel="stylesheet" href="/static/css/main.css?v=4" />
+    <link rel="stylesheet" href="/static/css/ui.css?v=4" />
   </head>
-  <body>
+  <body class="manager-body">
     <div class="container">
       <div class="topbar">
         <div>
@@ -22,18 +22,26 @@
         </div>
       </div>
 
-      <div class="grid">
-        <div class="card">
+      <div class="manager-grid">
+        <div class="card fill-card manager-left">
           <div class="title">Clients</div>
-          <input id="q" class="input" placeholder="Search by user_id / age_group / occupation..." />
-          <div class="scroll" id="clients_list"></div>
+          <input id="q" class="input" placeholder="Search by ID / ФИО..." />
+          <div class="scroll fill-scroll" id="clients_list"></div>
         </div>
 
-        <div class="card">
-          <div class="title">Edit client</div>
+        <div class="card fill-card manager-right">
+          <div class="card-head">
+            <div class="title">Edit client</div>
+            <div class="score-box">
+              <div class="score-text">Score:</div>
+              <div class="score-value" id="score_value">-</div>
+              <button class="btn success" id="btn_rescore" disabled>Rescore</button>
+            </div>
+          </div>
           <div class="muted" id="sel">Select a client</div>
           <div id="form" class="stack"></div>
           <div class="row" style="margin-top:10px;">
+            <button class="btn" id="btn_edit" disabled>Edit</button>
             <button class="btn primary" id="btn_save" disabled>Save</button>
             <div id="save_msg" class="error"></div>
           </div>
@@ -41,7 +49,7 @@
       </div>
     </div>
 
-    <script src="/static/js/manager_ui.js?v=3"></script>
+    <script src="/static/js/manager_ui.js?v=7"></script>
   </body>
 </html>
 

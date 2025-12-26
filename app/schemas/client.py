@@ -52,3 +52,11 @@ class ClientUpdate(BaseModel):
     days_employed_bin: str | None = None
 
 
+class ClientSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int
+    first_name: str
+    last_name: str
+
+

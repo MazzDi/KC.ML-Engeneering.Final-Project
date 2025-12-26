@@ -35,6 +35,11 @@ async def ui_client() -> FileResponse:
     return _file("client.html")
 
 
+@router.get("/ui/client/credit")
+async def ui_client_credit() -> FileResponse:
+    return _file("credit.html")
+
+
 @router.get("/ui/manager")
 async def ui_manager() -> FileResponse:
     return _file("manager.html")

@@ -17,11 +17,42 @@ async function postJson(url, body) {
   return data;
 }
 
-function kv(obj) {
-  if (!obj) return '<div class="muted">—</div>';
-  return Object.entries(obj)
-    .map(([k, v]) => `<div class="kv-row"><div class="muted">${k}</div><div>${v ?? '—'}</div></div>`)
-    .join('');
+const FIELD_META = [
+  {section: 'Личные данные'},
+  {key: 'code_gender', label: 'Пол'},
+  {key: 'days_birth', label: 'Дней прожито'},
+  {key: 'age_group', label: 'Возрастная группа'},
+  {key: 'cnt_fam_members', label: 'Количество членов семьи'},
+  {key: 'name_family_status', label: 'Семейное положение'},
+  {key: 'cnt_children', label: 'Количество детей'},
+  {key: 'flag_own_car', label: 'Личный автомобиль'},
+  {key: 'flag_own_realty', label: 'Недвижимость'},
+  {key: 'flag_phone', label: 'Есть личный телефон'},
+  {key: 'flag_email', label: 'Есть email'},
+
+  {section: 'Профессиональные данные'},
+  {key: 'name_education_type', label: 'Образование'},
+  {key: 'name_housing_type', label: 'Образ жизни'},
+  {key: 'occupation_type', label: 'Род деятельности'},
+  {key: 'days_employed', label: 'Трудовой стаж'},
+  {key: 'days_employed_bin', label: 'Группа по стажу'},
+  {key: 'amt_income_total', label: 'Годовой доход'},
+  {key: 'name_income_type', label: 'Источник дохода'},
+  {key: 'flag_work_phone', label: 'Есть рабочий телефон'},
+];
+
+function renderProfile(client) {
+  if (!client) return '<div class="muted">—</div>';
+  const chunks = [];
+  for (const item of FIELD_META) {
+    if (item.section) {
+      chunks.push(`<div class="section-title">${item.section}</div>`);
+      continue;
+    }
+    const v = client[item.key];
+    chunks.push(`<div class="kv-row"><div class="muted">${item.label}</div><div>${v ?? '—'}</div></div>`);
+  }
+  return chunks.join('');
 }
 
 function renderHistory(list) {
@@ -44,6 +75,27 @@ function setHTML(id, h) {
   if (el) el.innerHTML = h ?? '';
 }
 
+function scoreColor(v) {
+  const clamped = Math.max(0, Math.min(1, v));
+  const hue = clamped * 120; // 0 red -> 120 green
+  return `hsl(${hue}, 70%, 35%)`;
+}
+
+function setScoreDisplay(probaOrNull) {
+  const el = document.getElementById('score_value');
+  if (!el) return;
+  if (probaOrNull === null || probaOrNull === undefined) {
+    el.textContent = '-';
+    el.style.color = '';
+    return;
+  }
+  const proba = Number(probaOrNull);
+  const v = Number.isFinite(proba) ? Math.round((1 - proba) * 100) / 100 : NaN;
+  const shown = Number.isFinite(v) ? v.toFixed(2) : '-';
+  el.textContent = shown;
+  if (Number.isFinite(v)) el.style.color = scoreColor(v);
+}
+
 async function logout() {
   await fetch('/auth/logout', {method: 'POST', credentials: 'include'});
   window.location.href = '/';
@@ -59,18 +111,14 @@ async function load() {
   }
 
   const dash = await getJson('/api/client/dashboard');
-  setHTML('features', kv(dash.client));
-  setText('manager', dash.manager ? `manager_id=${dash.manager.user_id}` : '—');
-  setHTML('credit', dash.credit ? kv({amount_total: dash.credit.amount_total, annual_rate: dash.credit.annual_rate}) : '<div class="muted">—</div>');
-  setHTML('history', dash.credit ? renderHistory(dash.credit.payment_history) : '<div class="muted">—</div>');
-
-  if (dash.score) {
-    setText('score_value', String(dash.score.score));
-    document.getElementById('btn_score').disabled = true;
+  setHTML('features', renderProfile(dash.client));
+  if (dash.manager) {
+    setText('manager_info', `Manager: ID:${dash.manager.user_id} ${dash.manager.last_name} ${dash.manager.first_name}`);
   } else {
-    setText('score_value', '—');
-    document.getElementById('btn_score').disabled = false;
+    setText('manager_info', 'Manager: —');
   }
+
+  setScoreDisplay(dash.score ? dash.score.score : null);
 }
 
 async function main() {
@@ -79,8 +127,7 @@ async function main() {
     setText('score_msg', '');
     try {
       const s = await postJson('/api/client/score', {});
-      setText('score_value', String(s.score));
-      document.getElementById('btn_score').disabled = true;
+      setScoreDisplay(s.score);
     } catch (e) {
       setText('score_msg', e.message);
     }

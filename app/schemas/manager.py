@@ -7,3 +7,9 @@ class ManagerRead(BaseModel):
     user_id: int
 
 
+class ManagerSummary(BaseModel):
+    user_id: int
+    first_name: str
+    last_name: str
+
+
