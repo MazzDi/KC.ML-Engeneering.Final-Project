@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
 from sqlmodel import Field, Relationship
@@ -14,9 +13,7 @@ class Score(BaseModel, table=True):
     """
     Событие скоринга: фиксирует рассчитанный скор для пользователя в момент времени.
     """
-    user_id: int = Field(index=True, foreign_key="user.id")
-    client_id: Optional[int] = Field(default=None, index=True, foreign_key="client.user_id")
+    client_id: int = Field(index=True, foreign_key="client.user_id")
     score: float = Field(description="Скоринговый балл / вероятность дефолта")
-    scored_at: datetime = Field(default_factory=datetime.utcnow, description="Время расчёта скоринга")
     # Связи
     client: Optional["Client"] = Relationship(back_populates="scores")

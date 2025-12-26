@@ -17,8 +17,15 @@ from database.database import get_database_engine
 from models.user import User
 from models.client import Client
 from models.manager import Manager
-from models.credit import Credit  # noqa: F401 (import for SQLModel metadata)
-from models.scoring import Score  # noqa: F401 (import for SQLModel metadata)
+from models.credit import Credit
+from models.scoring import Score 
+from models.enum import UserRole
+from loguru import logger
+
+from services.crud.user import create_user
+from services.crud.client import create_client
+from services.crud.manager import create_manager
+from services.crud.credit import assign_credit
 
 
 def _wait_for_db(timeout_s: int = 60) -> None:
@@ -76,6 +83,28 @@ def _df_clients(path: str) -> pd.DataFrame:
     return pd.read_csv(path)
 
 
+def _credit_history_map(path: str, max_id: int) -> dict[int, list[dict[str, int | str]]]:
+    """
+    Build mapping: client_id -> list of history items sorted by months_ago ASC.
+    CSV has columns: ID, MONTHS_BALANCE (0, -1, -2...), STATUS (C/0/1/.../X).
+    We store months_ago as non-negative int where 0 is current month.
+    """
+    df = pd.read_csv(path)
+    df = df[df["ID"].between(1, max_id)]
+    # months_ago: convert negative months_balance to positive "months ago"
+    df["months_ago"] = (-df["MONTHS_BALANCE"]).astype(int)
+    df["status"] = df["STATUS"].astype(str)
+
+    out: dict[int, list[dict[str, int | str]]] = {}
+    for client_id, g in df.groupby("ID", sort=False):
+        g = g.sort_values("months_ago", ascending=True)
+        out[int(client_id)] = [
+            {"months_ago": int(m), "status": str(s)}
+            for m, s in zip(g["months_ago"].tolist(), g["status"].tolist())
+        ]
+    return out
+
+
 def _client_kwargs(row: pd.Series) -> dict:
     return dict(
         code_gender=row.get("CODE_GENDER"),
@@ -95,6 +124,7 @@ def _client_kwargs(row: pd.Series) -> dict:
         occupation_type=row.get("OCCUPATION_TYPE"),
         cnt_fam_members=int(row["CNT_FAM_MEMBERS"]),
         age_group=row.get("AGE_GROUP"),
+        days_employed_bin=row.get("DAYS_EMPLOYED_BIN"),
     )
 
 
@@ -120,12 +150,58 @@ def seed() -> None:
     with Session(engine) as session:
         already_seeded = session.exec(select(User).where(User.is_test == True)).first()
         if already_seeded is not None:
-            print("Seed: already exists (found test users). Skipping.")
+            # Backfill manager_id assignment if DB was seeded with clients lacking managers.
+            manager_ids = session.exec(select(Manager.user_id).order_by(Manager.user_id)).all()
+            if len(manager_ids) == 0:
+                print("Seed: already exists, but no managers found. Skipping.")
+                return
+
+            credit_history_path = Path(__file__).resolve().parent / "test_data" / "credit_history.csv"
+            history_by_client_id = _credit_history_map(str(credit_history_path), max_id=n_clients)
+
+            clients_without_manager = session.exec(
+                select(Client).where(Client.manager_id == None).order_by(Client.user_id)  # noqa: E711
+            ).all()
+            if len(clients_without_manager) == 0:
+                # Still may need to backfill credits
+                clients_without_manager = []
+
+            for i, client in enumerate(clients_without_manager):
+                client.manager_id = manager_ids[i % len(manager_ids)]
+            session.commit()
+
+            # Backfill credits: one credit per client (client.user_id == user.id)
+            client_ids = session.exec(select(Client.user_id).order_by(Client.user_id)).all()
+            existing_credit_client_ids = set(
+                session.exec(select(Credit.client_id)).all()
+            )
+            created = 0
+            for client_id in client_ids:
+                if client_id in existing_credit_client_ids:
+                    continue
+                client = session.get(Client, client_id)
+                if client is None:
+                    continue
+                assign_credit(
+                    client=client,
+                    amount_total=float(random.randint(1, 3_000_000)),
+                    annual_rate=0.16,
+                    payment_history=history_by_client_id.get(int(client_id), []),
+                    session=session,
+                )
+                created += 1
+
+            print(
+                f"Seed: backfilled manager assignment for clients={len(clients_without_manager)} "
+                f"across managers={len(manager_ids)}; created credits={created}."
+            )
             return
 
         used_logins: set[str] = set()
         df_clients_path = Path(__file__).resolve().parent / "test_data" / "df_to_keep.csv"
         df_clients = _df_clients(str(df_clients_path))
+        credit_history_path = Path(__file__).resolve().parent / "test_data" / "credit_history.csv"
+        history_by_client_id = _credit_history_map(str(credit_history_path), max_id=n_clients)
 
         total = n_clients + n_managers + n_admins
         rn = RussianNames(
@@ -141,6 +217,9 @@ def seed() -> None:
         cli_created = 0
         adm_created = 0
 
+        created_client_ids: list[int] = []
+        created_manager_ids: list[int] = []
+
         for i, person in enumerate(rn):
             name = person["name"]
             surname = person["surname"]
@@ -151,46 +230,69 @@ def seed() -> None:
             password = _make_password(login)
 
             if i < n_clients:
-                role = "client"
+                role = UserRole.CLIENT
                 is_admin = False
             elif i < n_clients + n_managers:
-                role = "manager"
+                role = UserRole.MANAGER
                 is_admin = False
             else:
-                role = "admin"
+                role = UserRole.ADMIN
                 is_admin = True
             
-            # Создание пользователя
-            user = User(
+            # Создание пользователя через CRUD
+            user = create_user(
                 login=login,
-                password_hash=_hash_password(password),
+                password=password,
                 first_name=name,
                 last_name=surname,
                 role=role,
+                session=session,
                 is_admin=is_admin,
                 is_test=True,
             )
-            session.add(user)
-            session.commit()
-            session.refresh(user)
 
             # Создание клиента или менеджера из пользователя
-            if role == "client":
+            if role == UserRole.CLIENT:
                 row = df_clients.iloc[cli_created % len(df_clients)]
-                session.add(Client(user_id=user.id, **_client_kwargs(row)))
+                client = create_client(
+                    user=user,
+                    session=session,
+                    **_client_kwargs(row),
+                )
+                created_client_ids.append(client.user_id)
                 cli_created += 1
-            elif role == "manager":
-                session.add(Manager(user_id=user.id))
+            elif role == UserRole.MANAGER:
+                manager = create_manager(user=user, session=session)
+                created_manager_ids.append(manager.user_id)
                 mgr_created += 1
             else:
                 adm_created += 1
 
-        session.commit()
+        # Аллоцирование клиентов к менеджерам.
+        if created_manager_ids:
+            for idx, client_user_id in enumerate(created_client_ids):
+                client = session.get(Client, client_user_id)
+                if client is not None:
+                    client.manager_id = created_manager_ids[idx % len(created_manager_ids)]
+            session.commit()
+
+        # Создание 1 кредита на каждого клиента + история выплат из credit_history.csv
+        for client_user_id in created_client_ids:
+            client = session.get(Client, client_user_id)
+            if client is None:
+                continue
+            assign_credit(
+                client=client,
+                amount_total=float(random.randint(1, 3_000_000)),
+                annual_rate=0.16,
+                payment_history=history_by_client_id.get(int(client_user_id), []),
+                session=session,
+            )
+
         print(
             f"Seed: created clients={cli_created}, managers={mgr_created}, admins={adm_created}."
         )
-
-
+    
 if __name__ == "__main__":
     seed()
 

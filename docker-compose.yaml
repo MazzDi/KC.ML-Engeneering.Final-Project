@@ -48,20 +48,41 @@ services:
       retries: 30
       start_period: 0s
 
-  # ml_worker:
-  #   build: ./ml_worker/
-  #   image: credit-scoring-ml-worker:latest
-  #   container_name: credit-scoring-ml-worker
-  #   restart: unless-stopped
-  #   env_file:
-  #     - ./.env
-  #   volumes:
-  #     - ./ml_worker:/app
-  #   depends_on:
-  #     - database
-  #     - rabbitmq
-  #   networks:
-  #     - app-network
+  ml-worker:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: credit-scoring-ml-worker
+    env_file:
+      - ./app/.env
+    volumes:
+      - ./app:/app
+      - ./database:/app/database
+    command: sh -c "python -m ml_worker.main"
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  rm-worker:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: credit-scoring-rm-worker
+    env_file:
+      - ./app/.env
+    volumes:
+      - ./app:/app
+      - ./database:/app/database
+    command: sh -c "python -m services.rm.worker"
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    networks:
+      - app-network
+    restart: unless-stopped
 
   web-proxy:
     build: ./nginx

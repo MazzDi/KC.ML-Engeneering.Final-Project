@@ -34,8 +34,9 @@ class Client(SQLModel, table=True):
     occupation_type: Optional[str] = Field(default=None, max_length=50)
     cnt_fam_members: Optional[int] = Field(default=None, ge=0)
     age_group: Optional[str] = Field(default=None, max_length=20)
+    days_employed_bin: Optional[str] = Field(default=None, max_length=20)
     # Связи
-    user: Optional["User"] = Relationship(back_populates="client")
+    user: "User" = Relationship(back_populates="client")
     manager: Optional["Manager"] = Relationship(back_populates="clients")
     credits: List["Credit"] = Relationship(back_populates="client")
     scores: List["Score"] = Relationship(back_populates="client")
