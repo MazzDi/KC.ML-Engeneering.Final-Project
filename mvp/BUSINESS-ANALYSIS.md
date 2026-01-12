@@ -16,18 +16,18 @@
 - Бизнес‑цели проекта (SMART)
   - Увеличить NII на +X% за 6 месяцев после запуска ML‑скоринга
   - Повысить Approval Rate на +Y п.п. при CoR ≤ T bps в течение 3 месяцев пилота
-- Целевая техническая метрика: AUC‑ROC (приоритет) или Gini; $ \mathrm{Gini} = 2 \times \mathrm{AUC} - 1 $.
+- Целевая техническая метрика: AUC‑ROC (приоритет) или Gini; \( \mathrm{Gini} = 2 \times \mathrm{AUC} - 1 \).
 - Существующие решения и ограничения
   - Сейчас: эвристики/правила по сегментам, экстраполяция на всех клиентов
   - Проблемы: грубый отбор, отсутствие калиброванной PD, сниженная конверсия, избыточный риск, ручные оверрайды
   - Возможность: ML‑скоринг с лучшей дискриминацией, калибровкой PD, объяснимостью и SLA
 
 ### Глоссарий и формулы
-- Net Interest Income (NII): $ \mathrm{NII} = \mathrm{Процентные\ доходы} - \mathrm{Процентные\ расходы} $.
-- Cost of Risk (CoR): $ \mathrm{CoR} = \frac{\mathrm{Расходы\ на\ резервы}}{\mathrm{Средний\ кредитный\ портфель}} $.
-- Approval Rate: $ \mathrm{Approval\ Rate} = \frac{\mathrm{Одобренные\ заявки}}{\mathrm{Все\ заявки}} $.
+- Net Interest Income (NII): \( \mathrm{NII} = \mathrm{Процентные\ доходы} - \mathrm{Процентные\ расходы} \).
+- Cost of Risk (CoR): \( \mathrm{CoR} = \frac{\mathrm{Расходы\ на\ резервы}}{\mathrm{Средний\ кредитный\ портфель}} \).
+- Approval Rate: \( \mathrm{Approval\ Rate} = \frac{\mathrm{Одобренные\ заявки}}{\mathrm{Все\ заявки}} \).
 - AUC‑ROC: площадь под ROC‑кривой (0.5–1.0).
-- Gini: $ \mathrm{Gini} = 2 \times \mathrm{AUC} - 1 $.
+- Gini: \( \mathrm{Gini} = 2 \times \mathrm{AUC} - 1 \).
 
 #### 1.1 Текущая ситуация (Assessing current solution)
 В первую очередь оцениваем, хватает ли ресурсов для проекта и нет ли критических ограничений.

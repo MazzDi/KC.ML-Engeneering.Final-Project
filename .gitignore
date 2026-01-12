@@ -36,3 +36,4 @@ catboost_info/
 advanced_tabular_classifier.py
 test.ipynb
 *.csv
+.pytest_cache/
