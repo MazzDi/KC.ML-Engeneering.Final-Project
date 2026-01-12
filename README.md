@@ -1,4 +1,52 @@
-## Credit Scoring Service (FastAPI + Postgres + RabbitMQ + CatBoost)
+
+---  
+
+# Проблема и цель проекта
+
+**Проблема**: В текущем процессе кредитования используются статические правила и эвристики. Это приводит к недоодобрениям «хороших» клиентов и переодобрениям «плохих», снижая Net Interest Income и повышая Cost of Risk. 
+
+
+**Цель**: заменить эвристики промышленным ML‑скорингом с объяснимостью, калибровкой вероятности дефолта и операционным SLA, который поможет снизить Cost of Risk, повысить Net Interest Income при управляемом Approval Rate.
+
+[**Подробнее**](https://github.com/MazzDi/KC.ML-Engeneering.Final-Project/blob/main/mvp/BUSINESS-ANALYSIS.md)
+
+---  
+
+# Целевая аудитория
+
+В первой версии реализован функционал и интерфейс только **для кредитных менеджеров и заемщиков**, но подразумевается также отдельный функционал для андеррайтеров и риск-аналитиков.
+
+[**Подробнее**](https://github.com/MazzDi/KC.ML-Engeneering.Final-Project/blob/main/mvp/PROTOTYPE_DOC.md)
+
+---  
+
+# Тесты моделей и метрики качества
+
+LogisticRegression - [Clear ML link](https://app.clear.ml/projects/9f0684512f9b4de5a3206934a6e151ab/experiments/986facbca13d4bd7b0f249e7d7ab7d86/output/execution)
+
+Basic CatBoost - [Clear ML link](https://app.clear.ml/projects/9f0684512f9b4de5a3206934a6e151ab/experiments/1d6e61ea22b84a2bbb6ba22901ebeee8/output/execution)
+
+ClassBalanced CatBoost - [Clear ML link](https://app.clear.ml/projects/9f0684512f9b4de5a3206934a6e151ab/experiments/421fc592b7914065a80b4732792c8eb7/output/execution)
+
+Optuna CatBoost - [Clear ML link](https://app.clear.ml/projects/9f0684512f9b4de5a3206934a6e151ab/experiments/fbabf6e3255b49eeb2ee9102256129d7/output/execution)
+
+C помощью Optuna был найден оптимальный набор гиперпараметров в 16 трае:
+- iterations: 1318
+- depth: 7
+- learning_rate: 0.12948536188730778
+- l2_leaf_reg: 0.12591917720522428
+- bagging_temperature: 3.3662956358386733
+- random_strength: 4.494464562798268
+- border_count: 222
+- grow_policy: Depthwise
+- min_data_in_leaf: 21
+- scale_pos_weight: 0.7502125752281787
+
+Этот набор гиперпараметров дает значение PR-AUC (Average Precision) на уровне 0.96
+
+---
+
+# Описание ML сервиса
 
 Сервис поднимает **API + Web UI** для скоринга клиентов.
 
@@ -14,7 +62,19 @@
 - **RabbitMQ**: RPC шина для ML воркеров.
 - **`ml-worker`**: CatBoost classifier RPC worker (`ml_scoring_queue`).
 
----
+### Схема работы (end-to-end)
+
+```mermaid
+flowchart LR
+  U[Пользователь (Web UI)] -->|HTTP| A[FastAPI app]
+  A -->|CRUD (SQLModel)| DB[(Postgres)]
+  A -->|RPC request (client features, reply_to, correlation_id)| MQ[(RabbitMQ)]
+  MQ -->|consume ml_scoring_queue| W[ml-worker (CatBoost)]
+  W -->|RPC response: proba| MQ
+  MQ -->|deliver response| A
+  A -->|save Score(proba)| DB
+  A -->|JSON + HTML/static| U
+```
 
 ## 1) Проектирование доменной модели сервиса
 
@@ -89,8 +149,6 @@ docker compose --env-file ./app/.env up -d --build
 pytest -q
 ```
 
----
-
 ## 2) Обеспечение хранения данных за счет СУБД
 
 - **СУБД**: Postgres (контейнер `database` в `docker-compose.yaml`).
@@ -98,16 +156,12 @@ pytest -q
 - **Подключение/сессии**: `database/database.py` (`get_database_engine()`, `get_session()`).
 - **Миграции** не используются: схема создается через `SQLModel.metadata.create_all(...)` при старте seed/тестов.
 
----
-
 ## 3) Реализация REST интерфейса для взаимодействия с сервисом
 
 - FastAPI приложение: `app/api.py`.
 - Роуты вынесены по сущностям в `app/routes/`:
   - `health.py`, `auth.py`, `users.py`, `clients.py`, `managers.py`, `ui_api.py`, `ui_pages.py`
 - Вся логика работы с БД идёт **через CRUD слой** в `app/services/crud/` (роуты не ходят в session напрямую “в обход”).
-
----
 
 ## 4) Реализация пользовательского интерфейса для сервиса
 
@@ -117,8 +171,6 @@ UI реализован как **статические страницы + JS**,
 - Страницы отдаёт backend: `app/routes/ui_pages.py`.
 - Данные для UI: `app/routes/ui_api.py` (отдельные endpoints для client/manager dashboards).
 - Авторизация: `app/routes/auth.py` + `SessionMiddleware` (cookie-based session).
-
----
 
 ## 5) Обеспечение покрытия тестами критических частей сервиса
 
@@ -136,7 +188,6 @@ UI реализован как **статические страницы + JS**,
 pytest -q
 ```
 
----
 
 ## 6) Упаковка сервиса в Docker контейнер
 
@@ -150,8 +201,6 @@ pytest -q
 - `web-proxy` (nginx)
 
 Общий Python-образ для `app/ml-worker` собирается из `app/Dockerfile`.
-
----
 
 ## 7) Масштабирование количества воркеров с моделью
 
