@@ -66,14 +66,14 @@ C помощью Optuna был найден оптимальный набор г
 
 ```mermaid
 flowchart LR
-  U[Пользователь (Web UI)] -->|HTTP| A[FastAPI app]
-  A -->|CRUD (SQLModel)| DB[(Postgres)]
-  A -->|RPC request (client features, reply_to, correlation_id)| MQ[(RabbitMQ)]
-  MQ -->|consume ml_scoring_queue| W[ml-worker (CatBoost)]
-  W -->|RPC response: proba| MQ
-  MQ -->|deliver response| A
-  A -->|save Score(proba)| DB
-  A -->|JSON + HTML/static| U
+  U["User (Web UI)"] -->|HTTP| A["FastAPI app"]
+  A -->|"CRUD (SQLModel)"| DB[("Postgres")]
+  A -->|"RPC request (features, reply_to, correlation_id)"| MQ[("RabbitMQ")]
+  MQ -->|"consume ml_scoring_queue"| W["ml-worker (CatBoost)"]
+  W -->|"RPC response (proba)"| MQ
+  MQ -->|"deliver response"| A
+  A -->|"save Score(proba)"| DB
+  A -->|"JSON + HTML/static"| U
 ```
 
 ## 1) Проектирование доменной модели сервиса
